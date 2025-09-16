@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * ProcessWire Reusable Images
+ *
+ *
+ * ProcessWire 3.x
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * @author Juraj Mydla
+ * @version 0.0.1
+ * @copyright Copyright (c) 2025 
+ * @see https://github.com/justonestep/processwire-fieldtypeimageextra
+ *
+ */
+
+namespace ProcessWire;
+
+class ProcessReusableImages extends Process implements Module
+{
+	public static function getModuleInfo()
+	{
+		return array(
+			'title' => __('Process Reusable Images', 'FieldtypeReusableImages') ,
+			'summary' => __('Process for admin page for fieldtype Reusable Images.', 'FieldtypeReusableImages'),
+			'author' => 'Juraj Mydla',
+			'version' => 001,
+			'requires' => ['ProcessWire>=3.0.179', 'PHP>=7.4.0'],
+			'autoload' => true,
+			'page' => [
+				'name' => 'reuse-images',
+				'title' => __('Reusable Images', 'FieldtypeReusableImages')
+			]
+		);
+	}
+
+	public function ___execute()
+	{
+		$out = '<p>Hello World :)</p>';
+		return $out;
+	}
+}

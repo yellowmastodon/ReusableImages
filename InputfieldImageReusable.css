@@ -1,0 +1,52 @@
+.InputfieldImageReusable{
+    & .ui-button-desc-wrapper{
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        & .ui-button::after{
+            content: "*";
+        }
+        & .ui-button-desc{
+            margin-top: .3em;
+            
+        }
+        & .ui-button-desc::before{
+            content: " *";
+        }
+    }
+    & .InputfieldFileUpload{
+        display: flex;
+        align-items: start;
+    }
+
+    & .AjaxUploadDropHere.description{
+        max-width: 15em;
+        bottom: 0;
+        top: unset;
+    }
+    & .InputfieldFileValidExtensions{
+        line-height: 38px;
+    }
+    & .AjaxUploadDropHere.description > span {
+            display: flex;
+            align-items: first baseline;
+            line-height: 1.2;
+        }
+   
+    & .AjaxUploadDropHere.description > .upload-icon{
+        margin-right: .5em;
+    }
+
+
+}
+
+.InputfieldImageReusable .InputfieldContent {
+    container-type: inline-size;
+    container-name: InputfieldImageReusableContent;
+}
+
+@container InputfieldImageReusableContent (width < 1000px) {
+    .InputfieldImageReusable .AjaxUploadDropHere.description{
+        display: none !important;
+    }
+}
