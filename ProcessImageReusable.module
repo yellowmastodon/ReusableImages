@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * ProcessWire Reusable Images
+ *
+ *
+ * ProcessWire 3.x
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * @author Juraj Mydla
+ * @version 0.0.1
+ * @copyright Copyright (c) 2025 
+ * @see https://github.com/justonestep/processwire-fieldtypeimageextra
+ *
+ */
+
+namespace ProcessWire;
+
+class ProcessImageReusable extends Process implements Module
+{
+
+	/**
+	 * Retrieves module meta data
+	 * Implementation of the Module interface
+	 *
+	 * @return array
+	 * @see http://processwire.com/apigen/class-Module.html
+	 */
+	public static function getModuleInfo()
+	{
+		$info = include __DIR__ . '/ImageReusable.info.php';
+		return $info['Process'];
+	}
+
+	static protected $defaults = array(
+		'test' => '',
+
+	);
+
+	/**
+	 * Page to show images from
+	 * 
+	 * @var Page
+	 * 
+	 */
+	protected $imagePage;
+
+	/**
+	 * Process admin page
+	 * 
+	 * @var Page
+	 * 
+	 */
+	protected $ProcessPage;
+
+	public function init()
+	{
+
+		parent::init();
+	/* $this->modules = $this->wire()->modules;
+		$this->input = $this->wire()->input;
+		$this->config = $this->wire()->config;
+		$this->user = $this->wire()->user;
+		$this->sanitizer = $this->wire()->sanitizer;
+		$this->session = $this->wire()->session;
+		$this->pages = $this->wire()->pages;
+		$this->languages = $this->wire()->languages;
+		$this->moduleUrl = $this->wire->config->urls($this);
+		//bd($config)
+		$this->reusePage = $this->pages->get('name=reuse-images, parent_id=' . $this->config->adminRootPageID);
+		$this->config->scripts->add($this->moduleUrl . 'ProcessImageReusable.js');
+		$getID = (int) $this->input->get('id');
+		$postID = (int) $this->input->post('id'); */
+	}
+
+
+
+
+	/**
+	 * Build an Inputfield for selecting a page to reuse images from or upload new images to.
+	 *
+	 * @return InputfieldPageListSelect|InputfieldSelect
+	 *
+	 */
+	protected function buildPageSelectInputfield()
+	{
+		$defaultPage = $this->reusePage;
+		/** @var InputfieldPageListSelect $field */
+		$field = $this->modules->get('InputfieldPageListSelect');
+		$field->set('parent_id', 0); // Show all pages from root
+		$field->required = true; //to disallow unselect
+		//$field->collapsed = Inputfield::collapsedYesAjax;
+
+		$field->label = $this->_('Select Page');
+		//$field->icon = 'folder-open-o';
+		$field->attr('id+name', 'ProcessImageReusablePageTree');
+		$field->attr('value', $defaultPage ? $defaultPage : 0); // Default to current page
+		return $field;
+	}
+
+
+	public function ___execute()
+	{
+		/** @var \InputfieldWrapper $form */
+		$form = $this->modules->get('InputfieldWrapper');
+		$form->attr('id+name', 'ProcessReusableImagesForm');
+		$form->attr('method', 'post');
+		$form->attr('action', './');
+
+		// Add the page select inputfield
+		$pageSelect = $this->buildPageSelectInputfield();
+		$form->add($pageSelect);
+
+		// Add submit button
+		/** @var \InputfieldSubmit $submit */
+		$submit = $this->modules->get('InputfieldSubmit');
+		$submit->attr('name', 'submit_save');
+		$submit->attr('value', $this->_('Save'));
+		//$form->add($submit);
+
+		return $form->render();
+	}
+}

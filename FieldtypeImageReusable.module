@@ -22,7 +22,8 @@ namespace ProcessWire;
  * Class FieldTypeImageReusable
  */
 
-class FieldtypeImageReusable extends FieldtypeImage implements Module{
+class FieldtypeImageReusable extends FieldtypeImage implements Module
+{
 
 
   /**
@@ -32,16 +33,10 @@ class FieldtypeImageReusable extends FieldtypeImage implements Module{
    * @return array
    * @see http://processwire.com/apigen/class-Module.html
    */
-  public static function getModuleInfo() {
-      return array(
-        'title' => 'Reusable Images',
-        'summary' => 'Field that stores one or more GIF, JPG, or PNG images with additional meta informations',
-        'author' => 'Juraj Mydla',
-        'version' => 001,
-        'requires' => ['ProcessWire>=3.0.179', 'PHP>=7.4.0'],
-        'autoload' => true,
-        'installs' => 'ProcessReusableImages'
-      );
+  public static function getModuleInfo()
+  {
+    $info = include __DIR__ . '/ImageReusable.info.php';
+    return $info['Fieldtype'];
   }
 
   /**
@@ -50,23 +45,40 @@ class FieldtypeImageReusable extends FieldtypeImage implements Module{
    */
   protected $dbFields = array();
 
+  /**
+   * moduleConfig array
+   *
+   */
+  protected $moduleConfig = array();
 
   /**
    * init
    *
    */
-  public function init() {
+  public function init()
+  {
+    $this->moduleConfig = $this->modules->getConfig($this);
+
+    /**
+     * Create Image Folder Page on init, if not already present
+     */
+    $this->createImageFolderPageIfNotPresent();
+
     parent::init();
-    require_once __DIR__ . '/InputFieldImageReusable.php';
-    $this->defaultInputfieldClass = 'InputfieldImageReusable';
   }
+
+  /**
+   * Create Page to hold Reusable Images
+   */
+  public function ___install() {}
 
   /**
    * Return the DB schema used by this field's table
    *
    * @param Field $field
    */
-  public function getDatabaseSchema(Field $field) {
+  public function getDatabaseSchema(Field $field)
+  {
     $schema = parent::getDatabaseSchema($field);
     $schema['uploaded_pages_id'] = 'int UNSIGNED NOT NULL';
     $schema['is_reference'] = 'tinyint(1) NOT NULL DEFAULT 0';
@@ -75,9 +87,94 @@ class FieldtypeImageReusable extends FieldtypeImage implements Module{
     return $schema;
   }
 
-    public function saveFile(Page $page, Field $field, Pagefile $pagefile, array $columns = array()) {
-      
-      parent::saveFile($page, $field, $pagefile, $columns);
+  public function saveFile(Page $page, Field $field, Pagefile $pagefile, array $columns = array())
+  {
 
+    parent::saveFile($page, $field, $pagefile, $columns);
+  }
+
+  /**
+   * Checks if Page to store shared images (Image Folder Page) created and if not, creates it and saves its ID to DB
+   * @return void
+   */
+  public function createImageFolderPageIfNotPresent()
+  {
+    if (isset($this->moduleConfig['imageFolderPage']) && $this->moduleConfig['imageFolderPage'] !== 0) return;
+    $page = $this->createImageFolderPage();
+
+    if ($page instanceof Page && $page->id) {
+      $this->moduleConfig = array_merge($this->moduleConfig, ['imageFolderPage' => $page->id]);
+      $this->modules->saveConfig($this, $this->moduleConfig);
     }
+  }
+
+  /**
+   * Creates Page to store shared images (Image Folder Page)
+   * @return Page created page
+   */
+  public function createImageFolderPage()
+  {
+    $admin = $this->pages->get($this->config->adminRootPageID);
+    $admin_template_name = "shared-images-folder";
+    $admin_page_name = "shared-images-folder";
+    $admin_page_title = __("Shared Images (Folder)", 'ReusableImages');
+    $admin_page_icon = 'folder-o';
+    $field_name = "reusable_images";
+    $field_title = __("Images (reusable)", 'ReusableImages');
+    $fieldgroup_name = $admin_template_name;
+
+    $fg = $this->fieldgroups->get($fieldgroup_name);
+    if (!$fg) {
+      $fg = new Fieldgroup();
+      $fg->name = $fieldgroup_name;
+      $fg->add($this->fields->get("title"));
+      $fg->save();
+    }
+
+    $tpl = $this->templates->get($admin_template_name);
+    if (!$tpl) {
+      $tpl = new Template();
+      $tpl->name = $admin_template_name;
+      $tpl->fieldgroup = $fg;
+      $tpl->noChildren = 1;
+      $tpl->noAppendTemplateFile = 1;
+      $tpl->noPrependTemplateFile = 1;
+      $tpl->icon = $admin_page_icon;
+      $tpl->noChildren = 1;
+      $tpl->save();
+    }
+
+    $fi = $this->fields->get($field_name);
+    if (!$fi) {
+      $fi = new Field();
+      $fi->type = 'FieldtypeImageReusable';
+      $fi->name = $field_name;
+      $fi->title = $field_title;
+      $fi->outputFormat = FieldtypeFile::outputFormatArray;
+      $fi->inputfieldClass = "InputfieldImageReusable";
+      $fi->extensions = "bmp jpg png gif jpeg";
+      $fi->adminThumbs = true;
+      $fi->defaultGrid = true;
+      $fi->save();
+    }
+
+    if (!$fg->has($fi)) {
+      $fg->add($fi);
+      $fg->save();
+    }
+
+
+    $pg = $admin->child("name=$admin_page_name");
+    if (!$pg instanceof NullPage) {
+      $this->message(__("A 'Shared Image Folder' page already exists under Admin. Skipping creation.", 'ReusableImages'));
+    } else {
+      $pg = new Page();
+    }
+    $pg->template = $admin_template_name;
+    $pg->name = $admin_page_name;
+    $pg->parent = $admin;
+    $pg->title = $admin_page_title;
+    $pg->save();
+    return $pg;
+  }
 }
